@@ -1,85 +1,90 @@
-import type { Logger } from 'pino'
+import { mkdir, readFile, stat, unlink, writeFile } from 'fs/promises'
+import { join } from 'path'
 import { proto } from '../../WAProto'
-import type { AuthenticationCreds, AuthenticationState, SignalDataTypeMap } from '../Types'
+import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap } from '../Types'
 import { initAuthCreds } from './auth-utils'
 import { BufferJSON } from './generics'
 
-// useless key map only there to maintain backwards compatibility
-// do not use in your own systems please
-const KEY_MAP: { [T in keyof SignalDataTypeMap]: string } = {
-	'pre-key': 'preKeys',
-	'session': 'sessions',
-	'sender-key': 'senderKeys',
-	'app-state-sync-key': 'appStateSyncKeys',
-	'app-state-sync-version': 'appStateVersions',
-	'sender-key-memory': 'senderKeyMemory'
-}
 /**
- * @deprecated use multi file auth state instead please
- * stores the full authentication state in a single JSON file
+ * stores the full authentication state in a single folder.
+ * Far more efficient than singlefileauthstate
  *
- * DO NOT USE IN A PROD ENVIRONMENT, only meant to serve as an example
+ * Again, I wouldn't endorse this for any production level use other than perhaps a bot.
+ * Would recommend writing an auth state for use with a proper SQL or No-SQL DB
  * */
-export const useSingleFileAuthState = (filename: string, logger?: Logger): { state: AuthenticationState, saveState: () => void } => {
-	// require fs here so that in case "fs" is not available -- the app does not crash
-	const { readFileSync, writeFileSync, existsSync } = require('fs')
-	let creds: AuthenticationCreds
-	let keys: any = { }
+export const useMultiFileAuthState = async(folder: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
 
-	// save the authentication state to a file
-	const saveState = () => {
-		logger && logger.trace('saving auth state')
-		writeFileSync(
-			filename,
-			// BufferJSON replacer utility saves buffers nicely
-			JSON.stringify({ creds, keys }, BufferJSON.replacer, 2)
-		)
+	const writeData = (data: any, file: string) => {
+		return writeFile(join(folder, fixFileName(file)!), JSON.stringify(data, BufferJSON.replacer))
 	}
 
-	if(existsSync(filename)) {
-		const result = JSON.parse(
-			readFileSync(filename, { encoding: 'utf-8' }),
-			BufferJSON.reviver
-		)
-		creds = result.creds
-		keys = result.keys
+	const readData = async(file: string) => {
+		try {
+			const data = await readFile(join(folder, fixFileName(file)!), { encoding: 'utf-8' })
+			return JSON.parse(data, BufferJSON.reviver)
+		} catch(error) {
+			return null
+		}
+	}
+
+	const removeData = async(file: string) => {
+		try {
+			await unlink(join(folder, fixFileName(file)!))
+		} catch{
+
+		}
+	}
+
+	const folderInfo = await stat(folder).catch(() => { })
+	if(folderInfo) {
+		if(!folderInfo.isDirectory()) {
+			throw new Error(`found something that is not a directory at ${folder}, either delete it or specify a different location`)
+		}
 	} else {
-		creds = initAuthCreds()
-		keys = { }
+		await mkdir(folder, { recursive: true })
 	}
+
+	const fixFileName = (file?: string) => file?.replace(/\//g, '__')?.replace(/:/g, '-')
+
+	const creds: AuthenticationCreds = await readData('creds.json') || initAuthCreds()
 
 	return {
 		state: {
 			creds,
 			keys: {
-				get: (type, ids) => {
-					const key = KEY_MAP[type]
-					return ids.reduce(
-						(dict, id) => {
-							let value = keys[key]?.[id]
-							if(value) {
-								if(type === 'app-state-sync-key') {
+				get: async(type, ids) => {
+					const data: { [_: string]: SignalDataTypeMap[typeof type] } = { }
+					await Promise.all(
+						ids.map(
+							async id => {
+								let value = await readData(`${type}-${id}.json`)
+								if(type === 'app-state-sync-key' && value) {
 									value = proto.Message.AppStateSyncKeyData.fromObject(value)
 								}
 
-								dict[id] = value
+								data[id] = value
 							}
-
-							return dict
-						}, { }
+						)
 					)
+
+					return data
 				},
-				set: (data) => {
-					for(const _key in data) {
-						const key = KEY_MAP[_key as keyof SignalDataTypeMap]
-						keys[key] = keys[key] || { }
-						Object.assign(keys[key], data[_key])
+				set: async(data) => {
+					const tasks: Promise<void>[] = []
+					for(const category in data) {
+						for(const id in data[category]) {
+							const value = data[category][id]
+							const file = `${category}-${id}.json`
+							tasks.push(value ? writeData(value, file) : removeData(file))
+						}
 					}
 
-					saveState()
+					await Promise.all(tasks)
 				}
 			}
 		},
-		saveState
+		saveCreds: () => {
+			return writeData(creds, 'creds.json')
+		}
 	}
 }
