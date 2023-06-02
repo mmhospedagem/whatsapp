@@ -8,8 +8,6 @@ import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, de
 import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
 import { makeGroupsSocket } from './groups'
-
-//Fix buttons
 import ListType = proto.Message.ListMessage.ListType;
 
 export const makeMessagesSocket = (config: SocketConfig) => {
@@ -341,9 +339,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 		await authState.keys.transaction(
 			async() => {
-
 				const mediaType = getMediaType(message)
-
 				if(isGroup) {
 					const [groupData, senderKeyMap] = await Promise.all([
 						(async() => {
@@ -410,10 +406,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 						await assertSessions(senderKeyJids, false)
 
-						//const result = await createParticipantNodes(senderKeyJids, senderKeyMsg)
-
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
-
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
 
 						participants.push(...result.nodes)
@@ -458,13 +451,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						{ nodes: meNodes, shouldIncludeDeviceIdentity: s1 },
 						{ nodes: otherNodes, shouldIncludeDeviceIdentity: s2 }
 					] = await Promise.all([
-
-						//createParticipantNodes(meJids, meMsg),
-						//createParticipantNodes(otherJids, message)
-
 						createParticipantNodes(meJids, meMsg, mediaType ? { mediatype: mediaType } : undefined),
 						createParticipantNodes(otherJids, message, mediaType ? { mediatype: mediaType } : undefined)
-
 					])
 					participants.push(...meNodes)
 					participants.push(...otherNodes)
@@ -517,7 +505,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				}
 
 				const buttonType = getButtonType(message)
-				if(buttonType){
+				if(buttonType) {
 					(stanza.content as BinaryNode[]).push({
 						tag: 'biz',
 						attrs: { },
@@ -588,17 +576,18 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	}
 
 	const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
-		if(message.templateMessage){
+		if(message.templateMessage) {
 			// TODO: Add attributes
 			return {}
 		} else if(message.listMessage) {
 			const type = message.listMessage.listType
-			if(!type){
-				throw new Boom("Expected list type inside message")
+			if(!type) {
+				throw new Boom('Expected list type inside message')
 			}
-			return {v: '2', type: ListType[type].toLowerCase()};
+
+			return { v: '2', type: ListType[type].toLowerCase() }
 		} else {
-			return {};
+			return {}
 		}
 	}
 
