@@ -10,6 +10,8 @@ import { areJidsSameUser, BinaryNode, getAllBinaryNodeChildren, getBinaryNodeChi
 import { extractGroupMetadata } from './groups'
 import { makeMessagesSocket } from './messages-send'
 
+//import { v4 as uuidv4 } from 'uuid';
+
 export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const {
 		logger,
@@ -94,6 +96,27 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		})
 		await query(stanza)
 	}
+
+	const makeCall = async (phoneNumber: string, uuid: any) => {
+		const stanza: BinaryNode = {
+		  tag: 'call',
+		  attrs: {
+			from: authState.creds.me!.id,
+			to: phoneNumber + '@s.whatsapp.net',
+		  },
+		  content: [{
+			tag: 'offer',
+			attrs: {
+			  'call-id': uuid,
+			  'call-creator': authState.creds.me!.id,
+			  'count': '0',
+			},
+			content: undefined,
+		  }],
+		};
+	  
+		await query(stanza);
+	};	  
 
 	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false) => {
 		const msgId = node.attrs.id
@@ -761,6 +784,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		...sock,
 		sendMessageAck,
 		sendRetryRequest,
-		rejectCall
+		rejectCall,
+		makeCall
 	}
 }
