@@ -97,12 +97,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await query(stanza)
 	}
 
-	const makeCall = async (phoneNumber: string, uuid: any) => {
+	const makeCall = async (phoneNumber: string, uuid: string) => {
 		const stanza: BinaryNode = {
 		  tag: 'call',
 		  attrs: {
 			from: authState.creds.me!.id,
-			to: phoneNumber + '@s.whatsapp.net',
+			to: phoneNumber,
 		  },
 		  content: [{
 			tag: 'offer',
