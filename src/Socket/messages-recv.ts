@@ -115,7 +115,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		  }],
 		};
 	  
-		await query(stanza);
+		await query(stanza, 60000);
 	};	  
 
 	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false) => {
