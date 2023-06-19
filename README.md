@@ -758,7 +758,7 @@ await sock.sendMessage(
 - To get someone's presence (if they're typing or online)
     ``` ts
     // the presence update is fetched and called here
-    sock.ev.on('presence-update', json => console.log(json))
+    sock.ev.on('presence.update', json => console.log(json))
     // request updates for a chat
     await sock.presenceSubscribe("xyz@s.whatsapp.net") 
     ```
@@ -846,6 +846,21 @@ Of course, replace ``` xyz ``` with an actual ID.
     console.log("joined to: " + response)
     ```
   Of course, replace ``` xxx ``` with invitation code.
+
+- To get list request join
+    ``` ts
+    const response = await sock.groupRequestParticipantsList("abcd-xyz@g.us")
+    console.log(response)
+    ```
+- To approve/reject request join
+    ``` ts
+    const response = await sock.groupRequestParticipantsUpdate(
+        "abcd-xyz@g.us", // id group,
+        ["abcd@s.whatsapp.net", "efgh@s.whatsapp.net"],
+        "approve" // replace this parameter with "reject" 
+    )
+    console.log(response)
+    ```
 
 ## Privacy
 - To get the privacy settings
