@@ -53,7 +53,7 @@ export const DEFAULT_CONNECTION_CONFIG: SocketConfig = {
 	version: version as WAVersion,
 	browser: Browsers.baileys('Chrome'),
 	waWebSocketUrl: 'wss://web.whatsapp.com/ws/chat',
-	connectTimeoutMs: 20_000,
+	connectTimeoutMs: 60_000,
 	keepAliveIntervalMs: 30_000,
 	logger: logger.child({ class: 'baileys' }),
 	printQRInTerminal: false,
@@ -110,6 +110,7 @@ export const MEDIA_HKDF_KEY_MAPPING = {
 	'md-app-state': 'App State',
 	'product-catalog-image': '',
 	'payment-bg-image': 'Payment Background',
+	'ptv': 'Video'
 }
 
 export const MEDIA_KEYS = Object.keys(MEDIA_PATH_MAP) as MediaType[]
