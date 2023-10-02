@@ -148,8 +148,7 @@ export const decodeDecompressedBinaryNode = (
 		const device = readByte()
 		const user = readString(readByte())
 
-		//return jidEncode(user, 's.whatsapp.net', device, agent)
-		return jidEncode(user, agent === 0 ? 's.whatsapp.net' : 'lid', device)
+		return jidEncode(user, 's.whatsapp.net', device, agent)
 	}
 
 	const readString = (tag: number): string => {

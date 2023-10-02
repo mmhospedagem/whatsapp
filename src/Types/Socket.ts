@@ -115,7 +115,4 @@ export type SocketConfig = {
     getMessage: (key: proto.IMessageKey) => Promise<proto.IMessage | undefined>
 
     makeSignalRepository: (auth: SignalAuthState) => SignalRepository
-
-    /** Socket passthrough */
-    socket?: any
 }

@@ -227,9 +227,7 @@ export default (
 		})
 		ev.on('chats.delete', deletions => {
 			for(const item of deletions) {
-				if(chats.get(item)) {
-					chats.deleteById(item)
-				}
+				chats.deleteById(item)
 			}
 		})
 		ev.on('messages.upsert', ({ messages: newMessages, type }) => {
