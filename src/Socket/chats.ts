@@ -167,14 +167,10 @@ export const makeChatsSocket = (config: SocketConfig) => {
 	}
 
 	const onWhatsApp = async(...jids: string[]) => {
-
 		const query = { tag: 'contact', attrs: {} }
-
-		//const list = jids.map((jid) => ({
-
 		const list = jids.map((jid) => {
-
-			const content = (!jid.startsWith('+')) ? `+${jid}` : jid;
+			// insures only 1 + is there
+			const content = `+${jid.replace('+', '')}`
 
 			return {
 				tag: 'user',
@@ -185,16 +181,13 @@ export const makeChatsSocket = (config: SocketConfig) => {
 					content,
 				}],
 			}
-
 		})
-
 		const results = await interactiveQuery(list, query)
 
 		return results.map(user => {
 			const contact = getBinaryNodeChild(user, 'contact')
 			return { exists: contact?.attrs.type === 'in', jid: user.attrs.jid }
 		}).filter(item => item.exists)
-
 	}
 
 	const fetchStatus = async(jid: string) => {
@@ -971,8 +964,6 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			if(!authState.creds?.myAppStateKeyId && !config.mobile) {
 				ev.buffer()
 				needToFlushWithAppStateSync = true
-				// Teste
-				ev.flush()
 			}
 		}
 	})
