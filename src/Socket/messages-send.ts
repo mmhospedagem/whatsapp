@@ -313,16 +313,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const isGroup = server === 'g.us'
 		const isStatus = jid === statusJid
 
-		const isLid = server === 'lid'
-
 		msgId = msgId || generateMessageID()
 		useUserDevicesCache = useUserDevicesCache !== false
 
 		const participants: BinaryNode[] = []
-		//const destinationJid = (!isStatus) ? jidEncode(user, isGroup ? 'g.us' : 's.whatsapp.net') : statusJid
-
-		const destinationJid = (!isStatus) ? jidEncode(user, isLid ? 'lid' : isGroup ? 'g.us' : 's.whatsapp.net') : statusJid
-
+		const destinationJid = (!isStatus) ? jidEncode(user, isGroup ? 'g.us' : 's.whatsapp.net') : statusJid
 		const binaryNodeContent: BinaryNode[] = []
 		const devices: JidWithDevice[] = []
 
@@ -382,8 +377,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						devices.push(...additionalDevices)
 					}
 
-					//const patched = await patchMessageBeforeSending(message, devices.map(d => jidEncode(d.user, 's.whatsapp.net', d.device)))
-					const patched = await patchMessageBeforeSending(message, devices.map(d => jidEncode(d.user, isLid ? 'lid' : 's.whatsapp.net', d.device)))
+					const patched = await patchMessageBeforeSending(message, devices.map(d => jidEncode(d.user, 's.whatsapp.net', d.device)))
 					const bytes = encodeWAMessage(patched)
 
 					const { ciphertext, senderKeyDistributionMessage } = await signalRepository.encryptGroupMessage(
@@ -397,8 +391,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					const senderKeyJids: string[] = []
 					// ensure a connection is established with every device
 					for(const { user, device } of devices) {
-						//const jid = jidEncode(user, 's.whatsapp.net', device)
-						const jid = jidEncode(user, isLid ? 'lid' : 's.whatsapp.net', device)
+						const jid = jidEncode(user, 's.whatsapp.net', device)
 						if(!senderKeyMap[jid] || !!participant) {
 							senderKeyJids.push(jid)
 							// store that this person has had the sender keys sent to them
@@ -453,10 +446,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					const meJids: string[] = []
 					const otherJids: string[] = []
 					for(const { user, device } of devices) {
-						//const jid = jidEncode(user, 's.whatsapp.net', device)
+						const jid = jidEncode(user, 's.whatsapp.net', device)
 						const isMe = user === meUser
-						const jid = jidEncode(user, !isMe && isLid ? 'lid' : 's.whatsapp.net', device)
-						
 						if(isMe) {
 							meJids.push(jid)
 						} else {
