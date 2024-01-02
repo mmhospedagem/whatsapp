@@ -126,11 +126,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await query(stanza)
 	}
 
-	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false) => {
+	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false, maxRetryCount: number = 10) => {
 		const msgId = node.attrs.id
 
 		let retryCount = msgRetryCache.get<number>(msgId) || 0
-		if(retryCount >= 5) {
+		if(retryCount >= maxRetryCount) {
 			logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
 			msgRetryCache.del(msgId)
 			return

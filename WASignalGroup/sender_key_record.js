@@ -1,4 +1,4 @@
-const SenderKeyState = require('./sender_key_state');
+const {SenderKeyState} = require('./sender_key_state');
 
 class SenderKeyRecord {
     MAX_STATES = 5;
