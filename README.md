@@ -134,6 +134,8 @@ type SocketConfig = {
     customUploadHosts: MediaConnInfo['hosts']
     /** time to wait between sending new retry requests */
     retryRequestDelayMs: number
+     /** max msg retry count */
+    maxMsgRetryCount: number
     /** time to wait for the generation of the next QR in ms */
     qrTimeout?: number;
     /** provide an auth state object to maintain the auth state */
@@ -555,6 +557,17 @@ await sock.sendMessage(jid, { delete: response.key })
 ```
 
 **Note:** deleting for oneself is supported via `chatModify` (next section)
+
+## Updating Messages
+
+``` ts
+const jid = '1234@s.whatsapp.net'
+
+await sock.sendMessage(jid, {
+      text: 'updated text goes here',
+      edit: response.key,
+    });
+```
 
 ## Modifying Chats
 
