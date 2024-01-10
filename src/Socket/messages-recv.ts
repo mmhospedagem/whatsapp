@@ -133,7 +133,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		//let retryCount = msgRetryCache.get<number>(msgId) || 0
 		//if(retryCount >= 5) {
 
-		let retryCount = Number(`${msgRetryCache.get<number>(msgId) || 0}`);
+		const msgRetryCount = msgRetryCache.get<number>(msgId)
+
+		if(msgRetryCount === null) return;
+
+		let retryCount = Number(msgRetryCount || 0)
 
 		if(retryCount >= maxMsgRetryCount) {
 			logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
@@ -740,7 +744,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					} else {
 
 						// remove message from retry cache
-						msgRetryCache.del(node.attrs.id)
+						const retryCount = msgRetryCache.get<number>(node.attrs.id)
+						if (retryCount) {
+							msgRetryCache.set(node.attrs.id, null)
+						} else if (retryCount === null) return;
 
 						// no type in the receipt => message delivered
 						let type: MessageReceiptType = undefined
