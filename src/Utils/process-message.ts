@@ -386,7 +386,7 @@ const processMessage = async(
 								{
 									pollUpdateMessageKey: message.key,
 									vote: voteMsg,
-									senderTimestampMs: (content.pollUpdateMessage.senderTimestampMs! as Long).toNumber(),
+									senderTimestampMs: (content.pollUpdateMessage.senderTimestampMs! as Long).toNumber()
 								}
 							]
 						}
