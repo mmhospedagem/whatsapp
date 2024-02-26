@@ -304,59 +304,59 @@ const processMessage = async(
 		const participantsIncludesMe = () => participants.find(jid => areJidsSameUser(meId, jid))
 
 		switch (message.messageStubType) {
-			case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
-			case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-				participants = message.messageStubParameters || []
-				emitParticipantsUpdate('remove')
-				// mark the chat read only if you left the group
-				if(participantsIncludesMe()) {
-					chat.readOnly = true
-				}
+		case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
+		case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
+			participants = message.messageStubParameters || []
+			emitParticipantsUpdate('remove')
+			// mark the chat read only if you left the group
+			if(participantsIncludesMe()) {
+				chat.readOnly = true
+			}
 
-				break
-			case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-			case WAMessageStubType.GROUP_PARTICIPANT_INVITE:
-			case WAMessageStubType.GROUP_PARTICIPANT_ADD_REQUEST_JOIN:
-				participants = message.messageStubParameters || []
-				if(participantsIncludesMe()) {
-					chat.readOnly = false
-				}
+			break
+		case WAMessageStubType.GROUP_PARTICIPANT_ADD:
+		case WAMessageStubType.GROUP_PARTICIPANT_INVITE:
+		case WAMessageStubType.GROUP_PARTICIPANT_ADD_REQUEST_JOIN:
+			participants = message.messageStubParameters || []
+			if(participantsIncludesMe()) {
+				chat.readOnly = false
+			}
 
-				emitParticipantsUpdate('add')
-				break
-			case WAMessageStubType.GROUP_PARTICIPANT_DEMOTE:
-				participants = message.messageStubParameters || []
-				emitParticipantsUpdate('demote')
-				break
-			case WAMessageStubType.GROUP_PARTICIPANT_PROMOTE:
-				participants = message.messageStubParameters || []
-				emitParticipantsUpdate('promote')
-				break
-			case WAMessageStubType.GROUP_CHANGE_ANNOUNCE:
-				const announceValue = message.messageStubParameters?.[0]
-				emitGroupUpdate({ announce: announceValue === 'true' || announceValue === 'on' })
-				break
-			case WAMessageStubType.GROUP_CHANGE_RESTRICT:
-				const restrictValue = message.messageStubParameters?.[0]
-				emitGroupUpdate({ restrict: restrictValue === 'true' || restrictValue === 'on' })
-				break
-			case WAMessageStubType.GROUP_CHANGE_SUBJECT:
-				const name = message.messageStubParameters?.[0]
-				chat.name = name
-				emitGroupUpdate({ subject: name })
-				break
-			case WAMessageStubType.GROUP_CHANGE_INVITE_LINK:
-				const code = message.messageStubParameters?.[0]
-				emitGroupUpdate({ inviteCode: code })
-				break
-			case WAMessageStubType.GROUP_MEMBER_ADD_MODE:
-				const memberAddValue = message.messageStubParameters?.[0]
-				emitGroupUpdate({ memberAddMode: memberAddValue === 'all_member_add' })
-				break
-			case WAMessageStubType.GROUP_MEMBERSHIP_JOIN_APPROVAL_MODE:
-				const approvalMode = message.messageStubParameters?.[0]
-				emitGroupUpdate({ joinApprovalMode: approvalMode === 'on' })
-				break
+			emitParticipantsUpdate('add')
+			break
+		case WAMessageStubType.GROUP_PARTICIPANT_DEMOTE:
+			participants = message.messageStubParameters || []
+			emitParticipantsUpdate('demote')
+			break
+		case WAMessageStubType.GROUP_PARTICIPANT_PROMOTE:
+			participants = message.messageStubParameters || []
+			emitParticipantsUpdate('promote')
+			break
+		case WAMessageStubType.GROUP_CHANGE_ANNOUNCE:
+			const announceValue = message.messageStubParameters?.[0]
+			emitGroupUpdate({ announce: announceValue === 'true' || announceValue === 'on' })
+			break
+		case WAMessageStubType.GROUP_CHANGE_RESTRICT:
+			const restrictValue = message.messageStubParameters?.[0]
+			emitGroupUpdate({ restrict: restrictValue === 'true' || restrictValue === 'on' })
+			break
+		case WAMessageStubType.GROUP_CHANGE_SUBJECT:
+			const name = message.messageStubParameters?.[0]
+			chat.name = name
+			emitGroupUpdate({ subject: name })
+			break
+		case WAMessageStubType.GROUP_CHANGE_INVITE_LINK:
+			const code = message.messageStubParameters?.[0]
+			emitGroupUpdate({ inviteCode: code })
+			break
+		case WAMessageStubType.GROUP_MEMBER_ADD_MODE:
+			const memberAddValue = message.messageStubParameters?.[0]
+			emitGroupUpdate({ memberAddMode: memberAddValue === 'all_member_add' })
+			break
+		case WAMessageStubType.GROUP_MEMBERSHIP_JOIN_APPROVAL_MODE:
+			const approvalMode = message.messageStubParameters?.[0]
+			emitGroupUpdate({ joinApprovalMode: approvalMode === 'on' })
+			break
 		}
 	} else if(content?.pollUpdateMessage) {
 		const creationMsgKey = content.pollUpdateMessage.pollCreationMessageKey!
@@ -386,7 +386,7 @@ const processMessage = async(
 								{
 									pollUpdateMessageKey: message.key,
 									vote: voteMsg,
-									senderTimestampMs: (content.pollUpdateMessage.senderTimestampMs! as Long).toNumber()
+									senderTimestampMs: (content.pollUpdateMessage.senderTimestampMs! as Long).toNumber(),
 								}
 							]
 						}

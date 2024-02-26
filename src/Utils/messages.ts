@@ -520,8 +520,7 @@ export const generateWAMessageContent = async(
 			title: message.title,
 			footerText: message.footer,
 			description: message.text,
-			//listType: proto.Message.ListMessage.ListType.SINGLE_SELECT
-			listType: message.hasOwnProperty("listType") ? message.listType : proto.Message.ListMessage.ListType.PRODUCT_LIST
+			listType: proto.Message.ListMessage.ListType.SINGLE_SELECT
 		}
 
 		m = { listMessage }
@@ -686,6 +685,7 @@ export const normalizeMessageContent = (content: WAMessageContent | null | undef
 			 || message?.viewOnceMessage
 			 || message?.documentWithCaptionMessage
 			 || message?.viewOnceMessageV2
+			 || message?.viewOnceMessageV2Extension
 			 || message?.editedMessage
 		 )
 	 }
@@ -739,7 +739,6 @@ export const extractMessageContent = (content: WAMessageContent | undefined | nu
 /**
  * Returns the device predicted by message ID
  */
-//export const getDevice = (id: string) => /^3A/.test(id) ? 'ios' : /^3E/.test(id) ? 'web' : /^.{21}/.test(id) ? 'android' : /^.{18}/.test(id) ? 'desktop' : 'unknown'
 export const getDevice = (id: string) => /^3A.{18}$/.test(id) ? 'ios' : /^3E.{20}$/.test(id) ? 'web' : /^(.{21}|.{32})$/.test(id) ? 'android' : /^.{18}$/.test(id) ? 'desktop' : 'unknown'
 
 /** Upserts a receipt in the message */

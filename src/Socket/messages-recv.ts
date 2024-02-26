@@ -130,15 +130,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false) => {
 		const msgId = node.attrs.id
 
-		//let retryCount = msgRetryCache.get<number>(msgId) || 0
-		//if(retryCount >= 5) {
-
-		const msgRetryCount = msgRetryCache.get<number>(msgId)
-
-		if(msgRetryCount === null) return;
-
-		let retryCount = Number(msgRetryCount || 0)
-
+		let retryCount = msgRetryCache.get<number>(msgId) || 0
 		if(retryCount >= maxMsgRetryCount) {
 			logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
 			msgRetryCache.del(msgId)
@@ -213,14 +205,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				logger.info({ msgAttrs: node.attrs, retryCount }, 'sent retry receipt')
 			}
 		)
-		if(retryRequestDelayMs) {
-			await delay(retryRequestDelayMs)
-			const newRetryCount = msgRetryCache.get<number>(msgId);
-			// if send retry failed
-			if (retryCount == newRetryCount) {
-				await sendRetryRequest(node, forceIncludeKeys)
-			}
-		}
 	}
 
 	const handleEncryptNotification = async(node: BinaryNode) => {
@@ -520,7 +504,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const willSendMessageAgain = (id: string, participant: string) => {
 		const key = `${id}:${participant}`
 		const retryCount = msgRetryCache.get<number>(key) || 0
-		//return retryCount < 5
 		return retryCount < maxMsgRetryCount
 	}
 
@@ -695,13 +678,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const handleMessage = async(node: BinaryNode) => {
-
-		const originalFrom = `${node.attrs.from || ""}`
-
-		if (originalFrom && (msgRetryCache.get<number>(node.attrs?.id || "") || 0) > 0) {
-			node.attrs.from = node.attrs.from.replace(/:(.*)@/, "@")
-		}
-
 		const { fullMessage: msg, category, author, decrypt } = decryptMessageNode(
 			node,
 			authState.creds.me!.id,
@@ -742,13 +718,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 						)
 					} else {
-
-						// remove message from retry cache
-						const retryCount = msgRetryCache.get<number>(node.attrs.id)
-						if (retryCount) {
-							msgRetryCache.set(node.attrs.id, null)
-						} else if (retryCount === null) return;
-
 						// no type in the receipt => message delivered
 						let type: MessageReceiptType = undefined
 						let participant = msg.key.participant
@@ -764,15 +733,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							type = 'inactive'
 						}
 
-						//await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type)
-
-						await sendReceipt(originalFrom!, participant!, [msg.key.id!], type)
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type)
 
 						// send ack for history message
 						const isAnyHistoryMsg = getHistoryMsg(msg.message!)
 						if(isAnyHistoryMsg) {
-							//const jid = jidNormalizedUser(msg.key.remoteJid!)
-							const jid = jidNormalizedUser(originalFrom!)
+							const jid = jidNormalizedUser(msg.key.remoteJid!)
 							await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync')
 						}
 					}
