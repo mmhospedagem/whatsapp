@@ -81,7 +81,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	let sendActiveReceipts = false
 
-	const sendMessageAck = async({ tag, attrs }: BinaryNode) => {
+	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
 		const stanza: BinaryNode = {
 			tag: 'ack',
 			attrs: {
@@ -99,9 +99,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.recipient = attrs.recipient
 		}
 
-		if(tag !== 'message' && attrs.type) {
-			stanza.attrs.type = attrs.type
-		}
+
+    		if(!!attrs.type && (tag !== 'message' || getBinaryNodeChild({ tag, attrs, content }, 'unavailable'))) {
+      			stanza.attrs.type = attrs.type
+    		}
+
+    		if(tag === 'message' && getBinaryNodeChild({ tag, attrs, content }, 'unavailable')) {
+      			stanza.attrs.from = authState.creds.me!.id
+    		}
 
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')
 		await sendNode(stanza)
@@ -131,7 +136,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const msgId = node.attrs.id
 
 		let retryCount = msgRetryCache.get<number>(msgId) || 0
-		//if(retryCount >= 5) {
 		if(retryCount >= maxMsgRetryCount) {
 			logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
 			msgRetryCache.del(msgId)
@@ -301,6 +305,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		case 'invite':
 			msg.messageStubType = WAMessageStubType.GROUP_CHANGE_INVITE_LINK
 			msg.messageStubParameters = [ child.attrs.code ]
+			break
+		case 'member_add_mode':
+			const addMode = child.content
+			if(addMode) {
+				msg.messageStubType = WAMessageStubType.GROUP_MEMBER_ADD_MODE
+				msg.messageStubParameters = [ addMode.toString() ]
+			}
+
+			break
+		case 'membership_approval_mode':
+			const approvalMode: any = getBinaryNodeChild(child, 'group_join')
+			if(approvalMode) {
+				msg.messageStubType = WAMessageStubType.GROUP_MEMBERSHIP_JOIN_APPROVAL_MODE
+				msg.messageStubParameters = [ approvalMode.attrs.state ]
+			}
+
 			break
 		}
 	}
@@ -489,7 +509,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const willSendMessageAgain = (id: string, participant: string) => {
 		const key = `${id}:${participant}`
 		const retryCount = msgRetryCache.get<number>(key) || 0
-		//return retryCount < 5
 		return retryCount < maxMsgRetryCount
 	}
 
@@ -664,6 +683,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const handleMessage = async(node: BinaryNode) => {
+		if(getBinaryNodeChild(node, 'unavailable') && !getBinaryNodeChild(node, 'enc')) {
+			// "missing message from node" fix
+			logger.debug(node, 'missing body; sending ack then ignoring.')
+			await sendMessageAck(node)
+			return
+		}
+
 		const { fullMessage: msg, category, author, decrypt } = decryptMessageNode(
 			node,
 			authState.creds.me!.id,
