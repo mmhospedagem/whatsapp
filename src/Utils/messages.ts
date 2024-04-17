@@ -567,11 +567,26 @@ export const generateWAMessageFromContent = (
 		options.timestamp = new Date()
 	}
 
-	const key = Object.keys(message)[0]
+	let key = Object.keys(message)[0]
 	const timestamp = unixTimestampSeconds(options.timestamp)
 	const { quoted, userJid } = options
 
 	if(quoted) {
+
+		// type viewOnceMessage isn't compatible with quoted message.
+		// workaround: unwrap viewOnceMessage. it already contains viewOnce = true
+		if ('viewOnceMessage' in message && !!message.viewOnceMessage) {
+			const { viewOnceMessage, ...messageRest } = message
+			const { message: viewOnceContent, ...viewOnceRest } = viewOnceMessage!
+
+			message = messageRest
+			Object.assign(message, viewOnceRest)
+			Object.assign(message, viewOnceContent)
+
+			// recalculate key
+			key = Object.keys(message)[0]
+		}
+
 		const participant = quoted.key.fromMe ? userJid : (quoted.participant || quoted.key.participant || quoted.key.remoteJid)
 
 		let quotedMsg = normalizeMessageContent(quoted.message)!
