@@ -682,7 +682,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				throw new Boom('Expected list type inside message')
 			}
 
-			return { v: '3', type: ListType[type].toLowerCase() }
+			return { v: '2', type: ListType[type].toLowerCase() }
 		} else {
 			return {}
 		}
