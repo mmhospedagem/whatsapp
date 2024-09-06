@@ -9,9 +9,6 @@ import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
 import { makeGroupsSocket } from './groups'
 
-// Suporte a BUTTONS novamente
-import ListType = proto.Message.ListMessage.ListType;
-
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
 		logger,
@@ -35,22 +32,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		groupMetadata,
 		groupToggleEphemeral,
 	} = sock
-
-	const patchMessageRequiresBeforeSending = (msg: proto.IMessage, recipientJids: string[]): proto.IMessage => {
-		if (msg?.deviceSentMessage?.message?.listMessage) {
-			msg = JSON.parse(JSON.stringify(msg))
-
-			msg.deviceSentMessage!.message!.listMessage!.listType = proto.Message.ListMessage.ListType.SINGLE_SELECT
-		}
-
-		if (msg?.listMessage) {
-			msg = JSON.parse(JSON.stringify(msg))
-
-			msg.listMessage!.listType = proto.Message.ListMessage.ListType.SINGLE_SELECT
-		}
-
-		return msg;
-	}
 
 	const userDevicesCache = config.userDevicesCache || new NodeCache({
 		stdTTL: DEFAULT_CACHE_TTLS.USER_DEVICES, // 5 minutes
@@ -318,11 +299,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		extraAttrs?: BinaryNode['attrs']
 	) => {
 		const patched = await patchMessageBeforeSending(message, jids)
-		//const bytes = encodeWAMessage(patched)
-
-		const requiredPatched = patchMessageRequiresBeforeSending(patched, jids)
-		const bytes = encodeWAMessage(requiredPatched)
-
+		const bytes = encodeWAMessage(patched)
 
 		let shouldIncludeDeviceIdentity = false
 		const nodes = await Promise.all(
@@ -442,13 +419,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						devices.push(...additionalDevices)
 					}
 
-					// const patched = await patchMessageBeforeSending(message, devices.map(d => jidEncode(d.user, isLid ? 'lid' : 's.whatsapp.net', d.device)))
-					// const bytes = encodeWAMessage(patched)
-
-					const jids = devices.map(d => jidEncode(d.user, isLid ? 'lid' : 's.whatsapp.net', d.device))
-					const patched = await patchMessageBeforeSending(message, jids)
-					const requiredPatched = patchMessageRequiresBeforeSending(patched, jids)
-					const bytes = encodeWAMessage(requiredPatched)
+					const patched = await patchMessageBeforeSending(message, devices.map(d => jidEncode(d.user, isLid ? 'lid' : 's.whatsapp.net', d.device)))
+					const bytes = encodeWAMessage(patched)
 
 					const { ciphertext, senderKeyDistributionMessage } = await signalRepository.encryptGroupMessage(
 						{
@@ -594,21 +566,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					logger.debug({ jid }, 'adding device identity')
 				}
 
-				const buttonType = getButtonType(message)
-				if(buttonType) {
-					(stanza.content as BinaryNode[]).push({
-						tag: 'biz',
-						attrs: { },
-						content: [
-							{
-								tag: buttonType,
-								attrs: getButtonArgs(message),
-							}
-						]
-					})
-
-					logger.debug({ jid }, 'adding business node')
-
 				if(additionalNodes && additionalNodes.length > 0) {
 					(stanza.content as BinaryNode[]).push(...additionalNodes)
 				}
@@ -656,36 +613,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 	}
 
-	const getButtonType = (message: proto.IMessage) => {
-		if(message.buttonsMessage) {
-			return 'buttons'
-		} else if(message.buttonsResponseMessage) {
-			return 'buttons_response'
-		} else if(message.interactiveResponseMessage) {
-			return 'interactive_response'
-		} else if(message.listMessage) {
-			return 'list'
-		} else if(message.listResponseMessage) {
-			return 'list_response'
-		}
-	}
-
-	const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
-		if(message.templateMessage) {
-			// TODO: Add attributes
-			return {}
-		} else if(message.listMessage) {
-			const type = message.listMessage.listType
-			if(!type) {
-				throw new Boom('Expected list type inside message')
-			}
-
-			return { v: '2', type: ListType[type].toLowerCase() }
-		} else {
-			return {}
-		}
-	}
-
 	const getPrivacyTokens = async(jids: string[]) => {
 		const t = unixTimestampSeconds().toString()
 		const result = await query({
@@ -727,7 +654,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		relayMessage,
 		sendReceipt,
 		sendReceipts,
-		getButtonArgs,
 		readMessages,
 		refreshMediaConn,
 		waUploadToServer,
