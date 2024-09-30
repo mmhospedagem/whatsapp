@@ -364,7 +364,9 @@ export const getCallStatusFromNode = ({ tag, attrs }: BinaryNode) => {
 		if(attrs.reason === 'timeout') {
 			status = 'timeout'
 		} else {
-			status = 'reject'
+			//status = 'reject'
+			//fired when accepted/rejected/timeout/caller hangs up
+			status = 'terminate'
 		}
 
 		break
