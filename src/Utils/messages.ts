@@ -558,12 +558,25 @@ export const generateWAMessageContent = async(
 			msg.hydratedFooterText = message.footer
 		}
 
+		// Fix buttons
+
+		// m = {
+		// 	templateMessage: {
+		// 		fourRowTemplate: msg,
+		// 		hydratedTemplate: msg
+		// 	}
+		// }
+
 		m = {
-			templateMessage: {
-				fourRowTemplate: msg,
-				hydratedTemplate: msg
+			documentWithCaptionMessage: {
+				message: {
+					templateMessage: {
+						hydratedTemplate: msg
+					}
+				}
 			}
 		}
+
 	}
 
 	if('sections' in message && !!message.sections) {
