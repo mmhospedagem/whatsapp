@@ -4,7 +4,7 @@ import type { BufferedEventData } from './Events'
 import type { LabelActionBody } from './Label'
 import type { ChatLabelAssociationActionBody } from './LabelAssociation'
 import type { MessageLabelAssociationActionBody } from './LabelAssociation'
-import type { MinimalMessage } from './Message'
+import type { MinimalMessage, WAMessageKey } from './Message'
 
 /** privacy settings in WhatsApp Web */
 export type WAPrivacyValue = 'all' | 'contacts' | 'contact_blacklist' | 'none'
@@ -76,21 +76,19 @@ export type ChatModification =
     | {
         /** mute for duration, or provide timestamp of mute to remove*/
         mute: number | null
-    }
-    | {
-        clear: 'all' | { messages: { id: string, fromMe?: boolean, timestamp: number }[] }
-    }
-    | {
+    } | {
+        clear: boolean
+    } | {
+        deleteForMe: { deleteMedia: boolean, key: WAMessageKey, timestamp: number }
+    } | {
         star: {
             messages: { id: string, fromMe?: boolean }[]
             star: boolean
         }
-    }
-    | {
+    } | {
         markRead: boolean
         lastMessages: LastMessageList
-    }
-    | { delete: true, lastMessages: LastMessageList }
+    } | { delete: true, lastMessages: LastMessageList }
     // Label
     | { addLabel: LabelActionBody }
     // Label assosiation
